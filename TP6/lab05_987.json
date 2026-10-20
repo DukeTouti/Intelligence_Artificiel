@@ -1,0 +1,233 @@
+{
+  "lab": "lab05",
+  "student_id": "987",
+  "answers": {
+    "Q1": "...",
+    "Q2": "...",
+    "Q3": "...",
+    "Q4": "...",
+    "Q5": "..."
+  },
+  "tables": {
+    "sweep": [
+      {
+        "size": 100,
+        "overlap": 0,
+        "n_chunks": 122,
+        "recall@1": 0.3,
+        "recall@3": 0.8,
+        "recall@5": 0.8,
+        "recall@10": 0.9
+      },
+      {
+        "size": 100,
+        "overlap": 40,
+        "n_chunks": 198,
+        "recall@1": 0.5,
+        "recall@3": 0.6,
+        "recall@5": 0.7,
+        "recall@10": 0.9
+      },
+      {
+        "size": 200,
+        "overlap": 0,
+        "n_chunks": 61,
+        "recall@1": 0.4,
+        "recall@3": 0.8,
+        "recall@5": 0.8,
+        "recall@10": 0.8
+      },
+      {
+        "size": 200,
+        "overlap": 40,
+        "n_chunks": 76,
+        "recall@1": 0.5,
+        "recall@3": 0.7,
+        "recall@5": 0.9,
+        "recall@10": 0.9
+      },
+      {
+        "size": 200,
+        "overlap": 100,
+        "n_chunks": 118,
+        "recall@1": 0.5,
+        "recall@3": 0.7,
+        "recall@5": 0.9,
+        "recall@10": 0.9
+      },
+      {
+        "size": 400,
+        "overlap": 0,
+        "n_chunks": 31,
+        "recall@1": 0.5,
+        "recall@3": 0.7,
+        "recall@5": 0.7,
+        "recall@10": 0.7
+      },
+      {
+        "size": 400,
+        "overlap": 40,
+        "n_chunks": 35,
+        "recall@1": 0.4,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "recall@10": 1.0
+      },
+      {
+        "size": 400,
+        "overlap": 100,
+        "n_chunks": 41,
+        "recall@1": 0.5,
+        "recall@3": 0.7,
+        "recall@5": 0.8,
+        "recall@10": 0.8
+      }
+    ],
+    "embedding_models": [
+      {
+        "model": "all-MiniLM-L6-v2",
+        "recall@3_all": 0.7,
+        "recall@5_all": 0.9,
+        "recall@3_french": 0.5,
+        "n_french": 2
+      },
+      {
+        "model": "paraphrase-multilingual-MiniLM-L12-v2",
+        "recall@3_all": 0.7,
+        "recall@5_all": 0.7,
+        "recall@3_french": 1.0,
+        "n_french": 2
+      }
+    ],
+    "methods": [
+      {
+        "method": "vector",
+        "recall@1": 0.5,
+        "recall@3": 0.7,
+        "recall@5": 0.9,
+        "recall@10": 0.9
+      },
+      {
+        "method": "BM25",
+        "recall@1": 0.4,
+        "recall@3": 0.6,
+        "recall@5": 0.8,
+        "recall@10": 0.8
+      },
+      {
+        "method": "hybrid (RRF)",
+        "recall@1": 0.5,
+        "recall@3": 0.7,
+        "recall@5": 0.8,
+        "recall@10": 0.9
+      }
+    ],
+    "hardest": [
+      {
+        "question": "Why does a chatbot not remember me between two conversations?",
+        "snippet": "the weights are frozen",
+        "rank_of_first_gold": 999
+      },
+      {
+        "question": "What made image recognition suddenly work in 2012?",
+        "snippet": "two consumer GPUs",
+        "rank_of_first_gold": 4
+      },
+      {
+        "question": "Quelle est la différence entre un encodeur et un décodeur ?",
+        "snippet": "only what came before",
+        "rank_of_first_gold": 4
+      },
+      {
+        "question": "Which report triggered the first AI winter?",
+        "snippet": "commissioned the Lighthill",
+        "rank_of_first_gold": 3
+      },
+      {
+        "question": "How many parameters did GPT-3 have?",
+        "snippet": "300 billion training tokens",
+        "rank_of_first_gold": 3
+      }
+    ]
+  },
+  "extra": {
+    "my_size": 200,
+    "my_overlap": 40,
+    "choice_reason": "200/40 reaches the same recall@3 as 400/100 with half the words per chunk, so the passages I will paste into a prompt next week are shorter and cheaper for the same hit rate.",
+    "n_chunks": 76,
+    "eval_set": [
+      {
+        "q": "Which report triggered the first AI winter?",
+        "snippet": "commissioned the Lighthill",
+        "doc": "Session_1"
+      },
+      {
+        "q": "Why can a single perceptron not solve XOR?",
+        "snippet": "one straight line",
+        "doc": "Session_2"
+      },
+      {
+        "q": "What is the difference between precision and recall?",
+        "snippet": "of those flagged",
+        "doc": "Session_3"
+      },
+      {
+        "q": "How many parameters did GPT-3 have?",
+        "snippet": "300 billion training tokens",
+        "doc": "Session_4"
+      },
+      {
+        "q": "What does a model do when the classes are imbalanced and you only look at accuracy?",
+        "snippet": "always answers",
+        "doc": "Session_3"
+      },
+      {
+        "q": "Who organised the meeting where the field was given its name?",
+        "snippet": "John McCarthy",
+        "doc": "Session_1"
+      },
+      {
+        "q": "What made image recognition suddenly work in 2012?",
+        "snippet": "two consumer GPUs",
+        "doc": "Session_2"
+      },
+      {
+        "q": "Why does a chatbot not remember me between two conversations?",
+        "snippet": "the weights are frozen",
+        "doc": "Session_3",
+        "lang": "en"
+      },
+      {
+        "q": "Pourquoi l'arabe coûte-t-il plus cher que l'anglais pour le même texte ?",
+        "snippet": "two to three times English",
+        "doc": "Session_4",
+        "lang": "fr"
+      },
+      {
+        "q": "Quelle est la différence entre un encodeur et un décodeur ?",
+        "snippet": "only what came before",
+        "doc": "Session_4",
+        "lang": "fr"
+      }
+    ],
+    "words_before": {
+      "Session_1": 2842,
+      "Session_2": 3040,
+      "Session_3": 3267,
+      "Session_4": 3260
+    },
+    "words_after": {
+      "Session_1": 2734,
+      "Session_2": 2932,
+      "Session_3": 3159,
+      "Session_4": 3152
+    },
+    "diagnoses": {
+      "Why does a chatbot not remember me": "vocabulary — the passage says 'the weights are frozen' and never uses the word 'remember', so the vector search had to bridge the gap alone and BM25 was useless.",
+      "Quelle est la différence entre un encodeur": "vocabulary and language — the English-only model placed this French question far from the English passage; the multilingual model found it at rank 2.",
+      "What does a model do when the classes are imbalanced": "split — the worked example runs over a paragraph boundary, so with 100-word chunks the figure and its explanation ended up in two different pieces."
+    }
+  },
+  "call_log": [],
+  "created": "2026-10-20 11:31"
+}
