@@ -1,0 +1,1739 @@
+{
+  "lab": "lab06",
+  "student_id": "130588",
+  "answers": {
+    "what_it_does": "The assistant answers questions about the four course study sheets (Sessions 1 to 4). It retrieves passages with a hybrid search (multilingual embeddings plus BM25, merged by reciprocal rank fusion), sends them to Gemini at temperature 0, and answers with citations like [1] that are resolved to a document and page, for example Session_1 p.4. It works in English and French, answers in the language of the question, and replies \"I could not find this in the course documents.\" when the passages do not hold the answer. Follow-up questions are rewritten into standalone questions before searching.",
+    "measured": "On my 20-question acceptance suite (15 answerable, 5 that must be refused), version 1 scored 90% overall: 87% on answerable questions (13/15) and 100% on must-refuse questions (5/5). The two failures were refusals of answerable questions, about a chatbot not remembering the user and about Arabic costing more than English. I changed k from 5 to 10. Version 2 scored exactly the same, 87% answerable and 100% must-refuse, with zero verdicts changed, because the right chunks rank 30th and beyond the top 50. The follow-up rewrite did make a measurable difference: \"How many parameters does it have?\" was refused without history and answered once rewritten as \"How many parameters does GPT-3 have?\".",
+    "known_limits": "1. Vocabulary mismatch: a question that does not reuse the words of the passage, like \"remember me\" versus \"the weights are frozen\", is never retrieved (the chunk is not in the top 50), so the assistant refuses an answerable question.\n2. French questions are fragile: the Arabic-cost question ranked its chunk 30th, and \"Et le non supervisé ?\" was rewritten correctly yet still refused, so French against an English corpus can miss the right passage.\n3. Latency: one answer took 8.19 seconds in the smoke test, and a follow-up costs an extra model call for the rewrite, which is slow for a chat interface.\n4. Coverage stops at Session 4: anything from later sessions, lab details or exam dates is refused by design.",
+    "next_week": "I would improve retrieval for questions whose words do not match the passage: translate or expand the query before searching, for example by asking the model for a short English rewrite of French questions. Both failures I observed came from the right chunk not being retrieved, and the prompt was not at fault, since the model refused correctly what it could not see.",
+    "blind_spot": "My suite checks that the answer cites a passage from the expected document, not that the answer is actually true to that passage. An answer can cite the right page and still misstate a number, and my twenty questions would mark it as passed. The five refusal questions are also easy: none is a near-miss that sits close to the corpus. The suite has no Arabic question and no multi-turn conversation beyond one follow-up. I would add a check comparing each answer with its cited passage, a few near-miss unanswerable questions, and Arabic questions, since the tokenization cost in Session 4 makes Arabic a real use case in Morocco.",
+    "diagnosis": "Two answerable questions failed in version 1: \"Why does a chatbot not remember me between two conversations?\" and \"Pourquoi l'arabe coûte-t-il plus cher que l'anglais pour le même texte ?\". Both were refused with no source cited. Raising k from 5 to 10 changed nothing: version 2 scored exactly like version 1 (87% answerable, 100% must-refuse, zero verdict changes). A rank check showed why. The chunk holding the first answer (Session_3#16, \"the weights are frozen\") is not in the top 50 of either the vector or the BM25 ranking, so it is never retrieved. The chunk holding the second answer (Session_4#7) ranks 30th. In both cases the model never saw the passage and refused correctly given what it was shown. The cause is retrieval: the first question shares no words with its passage (remember versus the weights are frozen), and the French question cannot match English tokens in BM25. A larger k cannot help when the right chunk is ranked that low.",
+    "what_i_changed": "k from 5 to 10 in run_acceptance (no effect: the right chunks rank 30th and beyond the top 50)",
+    "c_observation": "The follow-up that changed the most is \"Et le non supervisé ?\" (row 3): the rewrite turned it into \"Qu'est-ce que l'apprentissage non supervisé ?\" and the retrieved passages share 0/5 with the blind version, but the answer did not improve, since both versions still refused. The clearest gains are rows 0 and 2: \"And what test is named after him?\" became \"What test is named after Alan Turing?\" and \"How many parameters does it have?\" became \"How many parameters does GPT-3 have?\". Both were refused blind and answered once rewritten, with 2/5 passages in common. Rows 1 and 4 changed little (4/5 and 3/5) because the question already contained its subject and neither version refused.",
+    "ui_notes": "I asked \"What is the ELIZA effect?\" and the assistant answered correctly, citing [2, 5], resolved to \"Session_1 p.4, Session_1 p.2\" (6.66 s in the acceptance run). The follow-up worked: after \"What is GPT-3?\" (answered with 175 billion parameters, 2,048-token context and 96 blocks, citing Session_4 p.3), the question \"How many parameters does it have?\" correctly returned 175 billion, citing Session_4 p.4 and p.3, so the history was understood. The unanswerable \"Quelle est la capitale du Maroc ?\" was correctly refused (7.29 s), so the assistant is grounded and not merely fluent. What broke: the French question \"Qu'est-ce que l'apprentissage supervisé ?\" was refused even though Session_3 defines supervised learning, the same retrieval weakness on French questions seen in Part E. A smaller issue is that raw citation numbers like [2, 5] appear in the text and mean nothing to a user, and every answer takes 6 to 8 seconds."
+  },
+  "tables": {
+    "acceptance_v1": [
+      {
+        "question": "Which report triggered the first AI winter?",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_1",
+        "pass": true,
+        "why": "",
+        "s": 8.19
+      },
+      {
+        "question": "Why can a single perceptron not solve XOR?",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_2",
+        "pass": true,
+        "why": "",
+        "s": 6.4
+      },
+      {
+        "question": "What is the difference between precision and",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_3, Session_3",
+        "pass": true,
+        "why": "",
+        "s": 7.25
+      },
+      {
+        "question": "How many parameters did GPT-3 have?",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_4, Session_4",
+        "pass": true,
+        "why": "",
+        "s": 6.67
+      },
+      {
+        "question": "What does a model do when the classes are im",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_3, Session_3",
+        "pass": true,
+        "why": "",
+        "s": 6.74
+      },
+      {
+        "question": "Who organised the meeting where the field wa",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_1",
+        "pass": true,
+        "why": "",
+        "s": 8.47
+      },
+      {
+        "question": "What made image recognition suddenly work in",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_2, Session_2, Session_2, Session_2",
+        "pass": true,
+        "why": "",
+        "s": 6.19
+      },
+      {
+        "question": "Why does a chatbot not remember me between t",
+        "must_refuse": false,
+        "refused": true,
+        "sources": "—",
+        "pass": false,
+        "why": "refused an answerable question",
+        "s": 13.78
+      },
+      {
+        "question": "Pourquoi l'arabe coûte-t-il plus cher que l'",
+        "must_refuse": false,
+        "refused": true,
+        "sources": "—",
+        "pass": false,
+        "why": "refused an answerable question",
+        "s": 9.99
+      },
+      {
+        "question": "Quelle est la différence entre un encodeur e",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_4",
+        "pass": true,
+        "why": "",
+        "s": 9.64
+      },
+      {
+        "question": "What is the ELIZA effect?",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_1, Session_1",
+        "pass": true,
+        "why": "",
+        "s": 6.66
+      },
+      {
+        "question": "Which three ingredients had to arrive togeth",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_2, Session_2",
+        "pass": true,
+        "why": "",
+        "s": 6.11
+      },
+      {
+        "question": "What are the training, validation and test s",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_3, Session_3",
+        "pass": true,
+        "why": "",
+        "s": 6.35
+      },
+      {
+        "question": "Why does a Transformer need positional encod",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_4",
+        "pass": true,
+        "why": "",
+        "s": 11.43
+      },
+      {
+        "question": "What is a base model and why does it not ans",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_4",
+        "pass": true,
+        "why": "",
+        "s": 13.41
+      },
+      {
+        "question": "What learning rate is used for the LoRA fine",
+        "must_refuse": true,
+        "refused": true,
+        "sources": "—",
+        "pass": true,
+        "why": "",
+        "s": 8.41
+      },
+      {
+        "question": "How does reciprocal rank fusion combine two ",
+        "must_refuse": true,
+        "refused": true,
+        "sources": "—",
+        "pass": true,
+        "why": "",
+        "s": 5.33
+      },
+      {
+        "question": "What is the date of the final exam for this ",
+        "must_refuse": true,
+        "refused": true,
+        "sources": "—",
+        "pass": true,
+        "why": "",
+        "s": 5.4
+      },
+      {
+        "question": "Quelle est la capitale du Maroc ?",
+        "must_refuse": true,
+        "refused": true,
+        "sources": "—",
+        "pass": true,
+        "why": "",
+        "s": 7.29
+      },
+      {
+        "question": "Which optimiser does the Adam paper compare ",
+        "must_refuse": true,
+        "refused": true,
+        "sources": "—",
+        "pass": true,
+        "why": "",
+        "s": 7.35
+      }
+    ],
+    "acceptance_v2": [
+      {
+        "question": "Which report triggered the first AI winter?",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_1, Session_1",
+        "pass": true,
+        "why": "",
+        "s": 1.06
+      },
+      {
+        "question": "Why can a single perceptron not solve XOR?",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_2",
+        "pass": true,
+        "why": "",
+        "s": 1.23
+      },
+      {
+        "question": "What is the difference between precision and",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_3",
+        "pass": true,
+        "why": "",
+        "s": 0.88
+      },
+      {
+        "question": "How many parameters did GPT-3 have?",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_4, Session_4, Session_2",
+        "pass": true,
+        "why": "",
+        "s": 1.68
+      },
+      {
+        "question": "What does a model do when the classes are im",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_3, Session_3, Session_3",
+        "pass": true,
+        "why": "",
+        "s": 0.84
+      },
+      {
+        "question": "Who organised the meeting where the field wa",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_1",
+        "pass": true,
+        "why": "",
+        "s": 3.64
+      },
+      {
+        "question": "What made image recognition suddenly work in",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_2, Session_2, Session_2",
+        "pass": true,
+        "why": "",
+        "s": 1.24
+      },
+      {
+        "question": "Why does a chatbot not remember me between t",
+        "must_refuse": false,
+        "refused": true,
+        "sources": "—",
+        "pass": false,
+        "why": "refused an answerable question",
+        "s": 0.73
+      },
+      {
+        "question": "Pourquoi l'arabe coûte-t-il plus cher que l'",
+        "must_refuse": false,
+        "refused": true,
+        "sources": "—",
+        "pass": false,
+        "why": "refused an answerable question",
+        "s": 0.77
+      },
+      {
+        "question": "Quelle est la différence entre un encodeur e",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_4",
+        "pass": true,
+        "why": "",
+        "s": 3.47
+      },
+      {
+        "question": "What is the ELIZA effect?",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_1, Session_1",
+        "pass": true,
+        "why": "",
+        "s": 0.82
+      },
+      {
+        "question": "Which three ingredients had to arrive togeth",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_2, Session_2",
+        "pass": true,
+        "why": "",
+        "s": 1.48
+      },
+      {
+        "question": "What are the training, validation and test s",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_3",
+        "pass": true,
+        "why": "",
+        "s": 2.27
+      },
+      {
+        "question": "Why does a Transformer need positional encod",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_4, Session_4",
+        "pass": true,
+        "why": "",
+        "s": 1.39
+      },
+      {
+        "question": "What is a base model and why does it not ans",
+        "must_refuse": false,
+        "refused": false,
+        "sources": "Session_4",
+        "pass": true,
+        "why": "",
+        "s": 0.81
+      },
+      {
+        "question": "What learning rate is used for the LoRA fine",
+        "must_refuse": true,
+        "refused": true,
+        "sources": "—",
+        "pass": true,
+        "why": "",
+        "s": 1.81
+      },
+      {
+        "question": "How does reciprocal rank fusion combine two ",
+        "must_refuse": true,
+        "refused": true,
+        "sources": "—",
+        "pass": true,
+        "why": "",
+        "s": 0.95
+      },
+      {
+        "question": "What is the date of the final exam for this ",
+        "must_refuse": true,
+        "refused": true,
+        "sources": "—",
+        "pass": true,
+        "why": "",
+        "s": 0.79
+      },
+      {
+        "question": "Quelle est la capitale du Maroc ?",
+        "must_refuse": true,
+        "refused": true,
+        "sources": "—",
+        "pass": true,
+        "why": "",
+        "s": 0.88
+      },
+      {
+        "question": "Which optimiser does the Adam paper compare ",
+        "must_refuse": true,
+        "refused": true,
+        "sources": "—",
+        "pass": true,
+        "why": "",
+        "s": 0.7
+      }
+    ],
+    "followups": [
+      {
+        "follow-up": "And what test is named after him?",
+        "rewritten as": "What test is named after Alan Turing?",
+        "same passages": "2/5",
+        "blind refused": true,
+        "aware refused": false
+      },
+      {
+        "follow-up": "Why could it not solve XOR?",
+        "rewritten as": "Why could the perceptron not solve XOR?",
+        "same passages": "4/5",
+        "blind refused": false,
+        "aware refused": false
+      },
+      {
+        "follow-up": "How many parameters does it have?",
+        "rewritten as": "How many parameters does GPT-3 have?",
+        "same passages": "2/5",
+        "blind refused": true,
+        "aware refused": false
+      },
+      {
+        "follow-up": "Et le non supervisé ?",
+        "rewritten as": "Qu'est-ce que l'apprentissage non supervisé ?",
+        "same passages": "0/5",
+        "blind refused": true,
+        "aware refused": true
+      },
+      {
+        "follow-up": "Why is it better than one-hot vect",
+        "rewritten as": "Why are embeddings better than one-hot vectors",
+        "same passages": "3/5",
+        "blind refused": false,
+        "aware refused": false
+      }
+    ]
+  },
+  "extra": {
+    "size": 200,
+    "overlap": 40,
+    "n_chunks": 76,
+    "k": 10,
+    "score_v1": {
+      "overall": 0.9,
+      "answerable": 0.867,
+      "refusal": 1.0
+    },
+    "score_v2": {
+      "overall": 0.9,
+      "answerable": 0.867,
+      "refusal": 1.0
+    },
+    "my_questions": [
+      {
+        "q": "What is the ELIZA effect?",
+        "doc": "Session_1"
+      },
+      {
+        "q": "Which three ingredients had to arrive together for deep learning to take off?",
+        "doc": "Session_2"
+      },
+      {
+        "q": "What are the training, validation and test sets each used for?",
+        "doc": "Session_3"
+      },
+      {
+        "q": "Why does a Transformer need positional encoding?",
+        "doc": "Session_4"
+      },
+      {
+        "q": "What is a base model and why does it not answer questions?",
+        "doc": "Session_4"
+      }
+    ],
+    "eval_from_lab5": [
+      {
+        "q": "Which report triggered the first AI winter?",
+        "doc": "Session_1"
+      },
+      {
+        "q": "Why can a single perceptron not solve XOR?",
+        "doc": "Session_2"
+      },
+      {
+        "q": "What is the difference between precision and recall?",
+        "doc": "Session_3"
+      },
+      {
+        "q": "How many parameters did GPT-3 have?",
+        "doc": "Session_4"
+      },
+      {
+        "q": "What does a model do when the classes are imbalanced and you only look at accuracy?",
+        "doc": "Session_3"
+      },
+      {
+        "q": "Who organised the meeting where the field was given its name?",
+        "doc": "Session_1"
+      },
+      {
+        "q": "What made image recognition suddenly work in 2012?",
+        "doc": "Session_2"
+      },
+      {
+        "q": "Why does a chatbot not remember me between two conversations?",
+        "doc": "Session_3"
+      },
+      {
+        "q": "Pourquoi l'arabe coûte-t-il plus cher que l'anglais pour le même texte ?",
+        "doc": "Session_4"
+      },
+      {
+        "q": "Quelle est la différence entre un encodeur et un décodeur ?",
+        "doc": "Session_4"
+      }
+    ],
+    "n_calls": 206,
+    "n_cached": 142
+  },
+  "call_log": [
+    {
+      "latency_s": 8.19,
+      "tokens_in": 1617,
+      "tokens_out": 13,
+      "cached": false
+    },
+    {
+      "latency_s": 7.29,
+      "tokens_in": 1537,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 6.49,
+      "tokens_in": 1467,
+      "tokens_out": 107,
+      "cached": false
+    },
+    {
+      "latency_s": 6.46,
+      "tokens_in": 1391,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 6.46,
+      "tokens_in": 1391,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 10.5,
+      "tokens_in": 1500,
+      "tokens_out": 57,
+      "cached": false
+    },
+    {
+      "latency_s": 14.12,
+      "tokens_in": 1415,
+      "tokens_out": 81,
+      "cached": false
+    },
+    {
+      "latency_s": 14.12,
+      "tokens_in": 1415,
+      "tokens_out": 81,
+      "cached": true
+    },
+    {
+      "latency_s": 13.67,
+      "tokens_in": 1578,
+      "tokens_out": 84,
+      "cached": false
+    },
+    {
+      "latency_s": 6.94,
+      "tokens_in": 1428,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 6.94,
+      "tokens_in": 1428,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 6.72,
+      "tokens_in": 1405,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 12.29,
+      "tokens_in": 1497,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 12.29,
+      "tokens_in": 1497,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 12.4,
+      "tokens_in": 1380,
+      "tokens_out": 24,
+      "cached": false
+    },
+    {
+      "latency_s": 15.01,
+      "tokens_in": 1452,
+      "tokens_out": 69,
+      "cached": false
+    },
+    {
+      "latency_s": 15.01,
+      "tokens_in": 1452,
+      "tokens_out": 69,
+      "cached": true
+    },
+    {
+      "latency_s": 8.19,
+      "tokens_in": 1617,
+      "tokens_out": 13,
+      "cached": true
+    },
+    {
+      "latency_s": 6.4,
+      "tokens_in": 1445,
+      "tokens_out": 75,
+      "cached": false
+    },
+    {
+      "latency_s": 7.25,
+      "tokens_in": 1446,
+      "tokens_out": 61,
+      "cached": false
+    },
+    {
+      "latency_s": 6.67,
+      "tokens_in": 1577,
+      "tokens_out": 16,
+      "cached": false
+    },
+    {
+      "latency_s": 6.74,
+      "tokens_in": 1363,
+      "tokens_out": 61,
+      "cached": false
+    },
+    {
+      "latency_s": 8.47,
+      "tokens_in": 1521,
+      "tokens_out": 41,
+      "cached": false
+    },
+    {
+      "latency_s": 6.19,
+      "tokens_in": 1480,
+      "tokens_out": 148,
+      "cached": false
+    },
+    {
+      "latency_s": 13.78,
+      "tokens_in": 1533,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 9.99,
+      "tokens_in": 1425,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 9.64,
+      "tokens_in": 1548,
+      "tokens_out": 84,
+      "cached": false
+    },
+    {
+      "latency_s": 6.66,
+      "tokens_in": 1507,
+      "tokens_out": 32,
+      "cached": false
+    },
+    {
+      "latency_s": 6.11,
+      "tokens_in": 1326,
+      "tokens_out": 85,
+      "cached": false
+    },
+    {
+      "latency_s": 6.35,
+      "tokens_in": 1473,
+      "tokens_out": 127,
+      "cached": false
+    },
+    {
+      "latency_s": 11.43,
+      "tokens_in": 1671,
+      "tokens_out": 88,
+      "cached": false
+    },
+    {
+      "latency_s": 13.41,
+      "tokens_in": 1313,
+      "tokens_out": 27,
+      "cached": false
+    },
+    {
+      "latency_s": 8.41,
+      "tokens_in": 1532,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 5.33,
+      "tokens_in": 1469,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 5.4,
+      "tokens_in": 1469,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 7.29,
+      "tokens_in": 1537,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 7.35,
+      "tokens_in": 1419,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 8.19,
+      "tokens_in": 1617,
+      "tokens_out": 13,
+      "cached": true
+    },
+    {
+      "latency_s": 6.4,
+      "tokens_in": 1445,
+      "tokens_out": 75,
+      "cached": true
+    },
+    {
+      "latency_s": 7.25,
+      "tokens_in": 1446,
+      "tokens_out": 61,
+      "cached": true
+    },
+    {
+      "latency_s": 6.67,
+      "tokens_in": 1577,
+      "tokens_out": 16,
+      "cached": true
+    },
+    {
+      "latency_s": 6.74,
+      "tokens_in": 1363,
+      "tokens_out": 61,
+      "cached": true
+    },
+    {
+      "latency_s": 8.47,
+      "tokens_in": 1521,
+      "tokens_out": 41,
+      "cached": true
+    },
+    {
+      "latency_s": 6.19,
+      "tokens_in": 1480,
+      "tokens_out": 148,
+      "cached": true
+    },
+    {
+      "latency_s": 13.78,
+      "tokens_in": 1533,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 9.99,
+      "tokens_in": 1425,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 9.64,
+      "tokens_in": 1548,
+      "tokens_out": 84,
+      "cached": true
+    },
+    {
+      "latency_s": 6.66,
+      "tokens_in": 1507,
+      "tokens_out": 32,
+      "cached": true
+    },
+    {
+      "latency_s": 6.11,
+      "tokens_in": 1326,
+      "tokens_out": 85,
+      "cached": true
+    },
+    {
+      "latency_s": 6.35,
+      "tokens_in": 1473,
+      "tokens_out": 127,
+      "cached": true
+    },
+    {
+      "latency_s": 11.43,
+      "tokens_in": 1671,
+      "tokens_out": 88,
+      "cached": true
+    },
+    {
+      "latency_s": 13.41,
+      "tokens_in": 1313,
+      "tokens_out": 27,
+      "cached": true
+    },
+    {
+      "latency_s": 8.41,
+      "tokens_in": 1532,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 5.33,
+      "tokens_in": 1469,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 5.4,
+      "tokens_in": 1469,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 7.29,
+      "tokens_in": 1537,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 7.35,
+      "tokens_in": 1419,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 6.49,
+      "tokens_in": 1467,
+      "tokens_out": 107,
+      "cached": true
+    },
+    {
+      "latency_s": 6.46,
+      "tokens_in": 1391,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 3.01,
+      "tokens_in": 175,
+      "tokens_out": 8,
+      "cached": false
+    },
+    {
+      "latency_s": 3.68,
+      "tokens_in": 1495,
+      "tokens_out": 6,
+      "cached": false
+    },
+    {
+      "latency_s": 10.5,
+      "tokens_in": 1500,
+      "tokens_out": 57,
+      "cached": true
+    },
+    {
+      "latency_s": 14.12,
+      "tokens_in": 1415,
+      "tokens_out": 81,
+      "cached": true
+    },
+    {
+      "latency_s": 8.65,
+      "tokens_in": 137,
+      "tokens_out": 9,
+      "cached": false
+    },
+    {
+      "latency_s": 0.77,
+      "tokens_in": 1425,
+      "tokens_out": 104,
+      "cached": false
+    },
+    {
+      "latency_s": 13.67,
+      "tokens_in": 1578,
+      "tokens_out": 84,
+      "cached": true
+    },
+    {
+      "latency_s": 6.94,
+      "tokens_in": 1428,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 1.94,
+      "tokens_in": 164,
+      "tokens_out": 9,
+      "cached": false
+    },
+    {
+      "latency_s": 7.43,
+      "tokens_in": 1556,
+      "tokens_out": 16,
+      "cached": false
+    },
+    {
+      "latency_s": 6.72,
+      "tokens_in": 1405,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 12.29,
+      "tokens_in": 1497,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 3.04,
+      "tokens_in": 95,
+      "tokens_out": 13,
+      "cached": false
+    },
+    {
+      "latency_s": 1.99,
+      "tokens_in": 1396,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 12.4,
+      "tokens_in": 1380,
+      "tokens_out": 24,
+      "cached": true
+    },
+    {
+      "latency_s": 15.01,
+      "tokens_in": 1452,
+      "tokens_out": 69,
+      "cached": true
+    },
+    {
+      "latency_s": 3.61,
+      "tokens_in": 106,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 3.54,
+      "tokens_in": 1434,
+      "tokens_out": 95,
+      "cached": false
+    },
+    {
+      "latency_s": 8.19,
+      "tokens_in": 1617,
+      "tokens_out": 13,
+      "cached": true
+    },
+    {
+      "latency_s": 6.4,
+      "tokens_in": 1445,
+      "tokens_out": 75,
+      "cached": true
+    },
+    {
+      "latency_s": 7.25,
+      "tokens_in": 1446,
+      "tokens_out": 61,
+      "cached": true
+    },
+    {
+      "latency_s": 6.67,
+      "tokens_in": 1577,
+      "tokens_out": 16,
+      "cached": true
+    },
+    {
+      "latency_s": 6.74,
+      "tokens_in": 1363,
+      "tokens_out": 61,
+      "cached": true
+    },
+    {
+      "latency_s": 8.47,
+      "tokens_in": 1521,
+      "tokens_out": 41,
+      "cached": true
+    },
+    {
+      "latency_s": 6.19,
+      "tokens_in": 1480,
+      "tokens_out": 148,
+      "cached": true
+    },
+    {
+      "latency_s": 13.78,
+      "tokens_in": 1533,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 9.99,
+      "tokens_in": 1425,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 9.64,
+      "tokens_in": 1548,
+      "tokens_out": 84,
+      "cached": true
+    },
+    {
+      "latency_s": 6.66,
+      "tokens_in": 1507,
+      "tokens_out": 32,
+      "cached": true
+    },
+    {
+      "latency_s": 6.11,
+      "tokens_in": 1326,
+      "tokens_out": 85,
+      "cached": true
+    },
+    {
+      "latency_s": 6.35,
+      "tokens_in": 1473,
+      "tokens_out": 127,
+      "cached": true
+    },
+    {
+      "latency_s": 11.43,
+      "tokens_in": 1671,
+      "tokens_out": 88,
+      "cached": true
+    },
+    {
+      "latency_s": 13.41,
+      "tokens_in": 1313,
+      "tokens_out": 27,
+      "cached": true
+    },
+    {
+      "latency_s": 8.41,
+      "tokens_in": 1532,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 5.33,
+      "tokens_in": 1469,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 5.4,
+      "tokens_in": 1469,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 7.29,
+      "tokens_in": 1537,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 7.35,
+      "tokens_in": 1419,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 8.19,
+      "tokens_in": 1617,
+      "tokens_out": 13,
+      "cached": true
+    },
+    {
+      "latency_s": 6.4,
+      "tokens_in": 1445,
+      "tokens_out": 75,
+      "cached": true
+    },
+    {
+      "latency_s": 7.25,
+      "tokens_in": 1446,
+      "tokens_out": 61,
+      "cached": true
+    },
+    {
+      "latency_s": 6.67,
+      "tokens_in": 1577,
+      "tokens_out": 16,
+      "cached": true
+    },
+    {
+      "latency_s": 6.74,
+      "tokens_in": 1363,
+      "tokens_out": 61,
+      "cached": true
+    },
+    {
+      "latency_s": 8.47,
+      "tokens_in": 1521,
+      "tokens_out": 41,
+      "cached": true
+    },
+    {
+      "latency_s": 6.19,
+      "tokens_in": 1480,
+      "tokens_out": 148,
+      "cached": true
+    },
+    {
+      "latency_s": 13.78,
+      "tokens_in": 1533,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 9.99,
+      "tokens_in": 1425,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 9.64,
+      "tokens_in": 1548,
+      "tokens_out": 84,
+      "cached": true
+    },
+    {
+      "latency_s": 6.66,
+      "tokens_in": 1507,
+      "tokens_out": 32,
+      "cached": true
+    },
+    {
+      "latency_s": 6.11,
+      "tokens_in": 1326,
+      "tokens_out": 85,
+      "cached": true
+    },
+    {
+      "latency_s": 6.35,
+      "tokens_in": 1473,
+      "tokens_out": 127,
+      "cached": true
+    },
+    {
+      "latency_s": 11.43,
+      "tokens_in": 1671,
+      "tokens_out": 88,
+      "cached": true
+    },
+    {
+      "latency_s": 13.41,
+      "tokens_in": 1313,
+      "tokens_out": 27,
+      "cached": true
+    },
+    {
+      "latency_s": 8.41,
+      "tokens_in": 1532,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 5.33,
+      "tokens_in": 1469,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 5.4,
+      "tokens_in": 1469,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 7.29,
+      "tokens_in": 1537,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 7.35,
+      "tokens_in": 1419,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 1.06,
+      "tokens_in": 3008,
+      "tokens_out": 47,
+      "cached": false
+    },
+    {
+      "latency_s": 1.23,
+      "tokens_in": 2932,
+      "tokens_out": 81,
+      "cached": false
+    },
+    {
+      "latency_s": 0.88,
+      "tokens_in": 2771,
+      "tokens_out": 52,
+      "cached": false
+    },
+    {
+      "latency_s": 1.68,
+      "tokens_in": 2826,
+      "tokens_out": 19,
+      "cached": false
+    },
+    {
+      "latency_s": 0.84,
+      "tokens_in": 2750,
+      "tokens_out": 61,
+      "cached": false
+    },
+    {
+      "latency_s": 3.64,
+      "tokens_in": 2881,
+      "tokens_out": 47,
+      "cached": false
+    },
+    {
+      "latency_s": 1.24,
+      "tokens_in": 2840,
+      "tokens_out": 228,
+      "cached": false
+    },
+    {
+      "latency_s": 0.73,
+      "tokens_in": 2918,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 0.77,
+      "tokens_in": 3010,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 3.47,
+      "tokens_in": 2876,
+      "tokens_out": 87,
+      "cached": false
+    },
+    {
+      "latency_s": 0.82,
+      "tokens_in": 2863,
+      "tokens_out": 32,
+      "cached": false
+    },
+    {
+      "latency_s": 1.48,
+      "tokens_in": 2703,
+      "tokens_out": 88,
+      "cached": false
+    },
+    {
+      "latency_s": 2.27,
+      "tokens_in": 2945,
+      "tokens_out": 83,
+      "cached": false
+    },
+    {
+      "latency_s": 1.39,
+      "tokens_in": 2792,
+      "tokens_out": 87,
+      "cached": false
+    },
+    {
+      "latency_s": 0.81,
+      "tokens_in": 2688,
+      "tokens_out": 39,
+      "cached": false
+    },
+    {
+      "latency_s": 1.81,
+      "tokens_in": 2917,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 0.95,
+      "tokens_in": 2790,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 0.79,
+      "tokens_in": 2740,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 0.88,
+      "tokens_in": 2894,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 0.7,
+      "tokens_in": 2832,
+      "tokens_out": 10,
+      "cached": false
+    },
+    {
+      "latency_s": 1.06,
+      "tokens_in": 3008,
+      "tokens_out": 47,
+      "cached": true
+    },
+    {
+      "latency_s": 1.23,
+      "tokens_in": 2932,
+      "tokens_out": 81,
+      "cached": true
+    },
+    {
+      "latency_s": 0.88,
+      "tokens_in": 2771,
+      "tokens_out": 52,
+      "cached": true
+    },
+    {
+      "latency_s": 1.68,
+      "tokens_in": 2826,
+      "tokens_out": 19,
+      "cached": true
+    },
+    {
+      "latency_s": 0.84,
+      "tokens_in": 2750,
+      "tokens_out": 61,
+      "cached": true
+    },
+    {
+      "latency_s": 3.64,
+      "tokens_in": 2881,
+      "tokens_out": 47,
+      "cached": true
+    },
+    {
+      "latency_s": 1.24,
+      "tokens_in": 2840,
+      "tokens_out": 228,
+      "cached": true
+    },
+    {
+      "latency_s": 0.73,
+      "tokens_in": 2918,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 0.77,
+      "tokens_in": 3010,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 3.47,
+      "tokens_in": 2876,
+      "tokens_out": 87,
+      "cached": true
+    },
+    {
+      "latency_s": 0.82,
+      "tokens_in": 2863,
+      "tokens_out": 32,
+      "cached": true
+    },
+    {
+      "latency_s": 1.48,
+      "tokens_in": 2703,
+      "tokens_out": 88,
+      "cached": true
+    },
+    {
+      "latency_s": 2.27,
+      "tokens_in": 2945,
+      "tokens_out": 83,
+      "cached": true
+    },
+    {
+      "latency_s": 1.39,
+      "tokens_in": 2792,
+      "tokens_out": 87,
+      "cached": true
+    },
+    {
+      "latency_s": 0.81,
+      "tokens_in": 2688,
+      "tokens_out": 39,
+      "cached": true
+    },
+    {
+      "latency_s": 1.81,
+      "tokens_in": 2917,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 0.95,
+      "tokens_in": 2790,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 0.79,
+      "tokens_in": 2740,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 0.88,
+      "tokens_in": 2894,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 0.7,
+      "tokens_in": 2832,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 6.72,
+      "tokens_in": 1405,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 0.7,
+      "tokens_in": 96,
+      "tokens_out": 7,
+      "cached": false
+    },
+    {
+      "latency_s": 7.29,
+      "tokens_in": 1537,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 1.03,
+      "tokens_in": 119,
+      "tokens_out": 7,
+      "cached": false
+    },
+    {
+      "latency_s": 6.66,
+      "tokens_in": 1507,
+      "tokens_out": 32,
+      "cached": true
+    },
+    {
+      "latency_s": 0.68,
+      "tokens_in": 163,
+      "tokens_out": 6,
+      "cached": false
+    },
+    {
+      "latency_s": 13.67,
+      "tokens_in": 1578,
+      "tokens_out": 84,
+      "cached": true
+    },
+    {
+      "latency_s": 0.67,
+      "tokens_in": 232,
+      "tokens_out": 9,
+      "cached": false
+    },
+    {
+      "latency_s": 7.43,
+      "tokens_in": 1556,
+      "tokens_out": 16,
+      "cached": true
+    },
+    {
+      "latency_s": 8.19,
+      "tokens_in": 1617,
+      "tokens_out": 13,
+      "cached": true
+    },
+    {
+      "latency_s": 6.4,
+      "tokens_in": 1445,
+      "tokens_out": 75,
+      "cached": true
+    },
+    {
+      "latency_s": 7.25,
+      "tokens_in": 1446,
+      "tokens_out": 61,
+      "cached": true
+    },
+    {
+      "latency_s": 6.67,
+      "tokens_in": 1577,
+      "tokens_out": 16,
+      "cached": true
+    },
+    {
+      "latency_s": 6.74,
+      "tokens_in": 1363,
+      "tokens_out": 61,
+      "cached": true
+    },
+    {
+      "latency_s": 8.47,
+      "tokens_in": 1521,
+      "tokens_out": 41,
+      "cached": true
+    },
+    {
+      "latency_s": 6.19,
+      "tokens_in": 1480,
+      "tokens_out": 148,
+      "cached": true
+    },
+    {
+      "latency_s": 13.78,
+      "tokens_in": 1533,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 9.99,
+      "tokens_in": 1425,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 9.64,
+      "tokens_in": 1548,
+      "tokens_out": 84,
+      "cached": true
+    },
+    {
+      "latency_s": 6.66,
+      "tokens_in": 1507,
+      "tokens_out": 32,
+      "cached": true
+    },
+    {
+      "latency_s": 6.11,
+      "tokens_in": 1326,
+      "tokens_out": 85,
+      "cached": true
+    },
+    {
+      "latency_s": 6.35,
+      "tokens_in": 1473,
+      "tokens_out": 127,
+      "cached": true
+    },
+    {
+      "latency_s": 11.43,
+      "tokens_in": 1671,
+      "tokens_out": 88,
+      "cached": true
+    },
+    {
+      "latency_s": 13.41,
+      "tokens_in": 1313,
+      "tokens_out": 27,
+      "cached": true
+    },
+    {
+      "latency_s": 8.41,
+      "tokens_in": 1532,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 5.33,
+      "tokens_in": 1469,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 5.4,
+      "tokens_in": 1469,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 7.29,
+      "tokens_in": 1537,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 7.35,
+      "tokens_in": 1419,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 1.06,
+      "tokens_in": 3008,
+      "tokens_out": 47,
+      "cached": true
+    },
+    {
+      "latency_s": 1.23,
+      "tokens_in": 2932,
+      "tokens_out": 81,
+      "cached": true
+    },
+    {
+      "latency_s": 0.88,
+      "tokens_in": 2771,
+      "tokens_out": 52,
+      "cached": true
+    },
+    {
+      "latency_s": 1.68,
+      "tokens_in": 2826,
+      "tokens_out": 19,
+      "cached": true
+    },
+    {
+      "latency_s": 0.84,
+      "tokens_in": 2750,
+      "tokens_out": 61,
+      "cached": true
+    },
+    {
+      "latency_s": 3.64,
+      "tokens_in": 2881,
+      "tokens_out": 47,
+      "cached": true
+    },
+    {
+      "latency_s": 1.24,
+      "tokens_in": 2840,
+      "tokens_out": 228,
+      "cached": true
+    },
+    {
+      "latency_s": 0.73,
+      "tokens_in": 2918,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 0.77,
+      "tokens_in": 3010,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 3.47,
+      "tokens_in": 2876,
+      "tokens_out": 87,
+      "cached": true
+    },
+    {
+      "latency_s": 0.82,
+      "tokens_in": 2863,
+      "tokens_out": 32,
+      "cached": true
+    },
+    {
+      "latency_s": 1.48,
+      "tokens_in": 2703,
+      "tokens_out": 88,
+      "cached": true
+    },
+    {
+      "latency_s": 2.27,
+      "tokens_in": 2945,
+      "tokens_out": 83,
+      "cached": true
+    },
+    {
+      "latency_s": 1.39,
+      "tokens_in": 2792,
+      "tokens_out": 87,
+      "cached": true
+    },
+    {
+      "latency_s": 0.81,
+      "tokens_in": 2688,
+      "tokens_out": 39,
+      "cached": true
+    },
+    {
+      "latency_s": 1.81,
+      "tokens_in": 2917,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 0.95,
+      "tokens_in": 2790,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 0.79,
+      "tokens_in": 2740,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 0.88,
+      "tokens_in": 2894,
+      "tokens_out": 10,
+      "cached": true
+    },
+    {
+      "latency_s": 0.7,
+      "tokens_in": 2832,
+      "tokens_out": 10,
+      "cached": true
+    }
+  ],
+  "created": "2026-10-20 20:42"
+}
